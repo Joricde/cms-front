@@ -1,5 +1,5 @@
 <template>
-  <Card dis-hover :bordered=false :style="{padding: '24px', margin: 'auto auto auto 15vw'}">
+  <Card dis-hover :bordered=false>
     <div id="Profile">
       <Content>
         <div>
@@ -10,7 +10,7 @@
                 <!--              <Icon style="float: right" type="ios-arrow-forward"/>-->
               </a>
             </ListItem>
-            <ListItem  class="ListItem" v-for="(value, key) in listItem.personalData" :key="key" :value="value"
+            <ListItem class="ListItem" v-for="(value, key) in listItem.personalData" :key="key" :value="value"
                       v-model=userData[value]>
               <a @click="gotoChange(value, key)">
                 <div class="set_margin">{{ value }}</div>
@@ -35,8 +35,15 @@
           footer-hide
           :mask-closable="false"
           v-model="modelInfo.changeModal">
-        <ChangeInfo :userData="userData" :modelInfo="modelInfo"
+        <ChangeInfo ref="setDefault" :userData="userData"
                     @gotoProfile="gotoProfile"></ChangeInfo>
+      </Modal>
+      <Modal
+          footer-hide
+          :mask-closable="false"
+          v-model="passwordModel.changeModal">
+        <ChangePassword :userData="userData"
+                        @gotoProfile="gotoProfile"></ChangePassword>
       </Modal>
     </div>
   </Card>
@@ -44,20 +51,23 @@
 
 <script>
 import ChangeInfo from "@/components/user/ChangeInfo";
+import ChangePassword from "@/components/user/ChangePassword";
 
 export default {
   name: "Profile",
-  components: {ChangeInfo},
+  components: {ChangePassword, ChangeInfo},
   data() {
     return {
       userData: {
-        name: 'xxx',
-        birthday: 'xxx',
-        gender: 'xxx',
-        password: '●●●●●●●●●●●●',
-        account: 'xxx',
-        email: 'xxx',
-        phone: 'xxx',
+        name: '',
+        birthday: '',
+        gender: '',
+        password: '●●●●●●●●●●●●●●',
+        account: '',
+        email: '',
+        phone: '',
+        idCard: '',
+        workUnit: '',
       },
       listItem: {
         personalData: {
@@ -65,6 +75,7 @@ export default {
           birthday: '生日',
           gender: '性别',
           password: '密码',
+          workUnit: '工作单位',
         },
         contactInformation: {
           account: '账号',
@@ -73,23 +84,63 @@ export default {
         }
       },
       modelInfo: {
-        changedTitle: '名字',
-        changedType: 'name',
+        // changedTitle: '名字',
+        // changedType: 'name',
+        changeModal: false,
+      },
+      passwordModel: {
         changeModal: false,
       }
 
-  }
+    }
+  },
+  created() {
+    this.getProfile()
   },
   methods: {
     gotoProfile(child) {
-      this.modelInfo.changeModal = child
+      this.modelInfo.changeModal = child;
+      this.passwordModel.changeModal = child
+      this.getProfile()
     },
     gotoChange(title, type) {
-      console.log(`${title} ${type}`)
-      this.modelInfo.changedTitle = title
-      this.modelInfo.changedType = type
-      this.modelInfo.changeModal = true
-    }
+      this.$refs.setDefault.setDataDefault()
+      if (type === 'account') {
+        return
+      }
+      if (type !== "password") {
+        this.modelInfo.changeModal = true
+      } else {
+        this.passwordModel.changeModal = true
+      }
+
+    },
+    getProfile() {
+      var that = this
+      this.$axios(
+          {
+            method: 'post',
+            url: `${this.$baseURI}/api/user/profile`,
+          }
+      ).then(function (response) {
+        let respData = response["data"]
+        that.userData.name = respData['name']
+        that.userData.birthday = (function () {
+          var formatDate = new Date(respData['birthday'])
+          var opt =
+              formatDate.getFullYear().toString() + '-' +
+              (formatDate.getMonth() + 1).toString() + '-' +
+              formatDate.getDate().toString()
+          return opt
+        })()
+        that.userData.gender = respData['gender'] === 'MALE' ? '男' : '女'
+        that.userData.account = respData['accountId']
+        that.userData.email = respData['email']
+        that.userData.phone = respData['telephone']
+        that.userData.idCard = respData['residentIdNumber']
+        that.userData.workUnit = respData['workplace']
+      })
+    },
   },
 
 }

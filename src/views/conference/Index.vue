@@ -1,9 +1,10 @@
 <template>
   <div>
     <Navbar></Navbar>
-    <Sidebar></Sidebar>
-      <RouterView></RouterView>
-
+    <Sidebar style="position: absolute"></Sidebar>
+    <Content style="margin-top: 60px; width: 100%; overflow-x: hidden">
+      <RouterView :style="{padding: '24px', margin: 'auto auto auto 15vw'}"></RouterView>
+    </Content>
   </div>
 </template>
 
